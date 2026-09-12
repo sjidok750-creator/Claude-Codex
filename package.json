@@ -1,0 +1,24 @@
+{
+  "name": "claude-codex",
+  "private": true,
+  "version": "0.1.0",
+  "description": "나 + Claude + Codex 3자 대화 허브",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel --stream run dev",
+    "build": "pnpm -r run build",
+    "typecheck": "pnpm -r run typecheck",
+    "start": "pnpm --filter @claude-codex/hub start"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

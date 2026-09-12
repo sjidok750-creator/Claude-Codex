@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="28" fill="#0b0f14"/>
+  <circle cx="44" cy="52" r="20" fill="#d97757"/>
+  <path d="M84 32l18 10v20l-18 10-18-10V42z" fill="#10a37f"/>
+  <circle cx="64" cy="92" r="16" fill="#5b5f97"/>
+  <text x="64" y="118" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#8a96a6">trio</text>
+</svg>
