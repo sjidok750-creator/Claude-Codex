@@ -162,7 +162,7 @@ export class HubDb {
     this.db.prepare(
       `INSERT INTO topics (id, profile, title, emoji, turn_policy, relay_max_rounds, system_prompt, working_dir, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(id, input.profile, input.title, input.emoji ?? '💬', input.turnPolicy ?? 'mention', DEFAULTS.relayMaxRounds,
+    ).run(id, input.profile, input.title, input.emoji ?? '', input.turnPolicy ?? 'mention', DEFAULTS.relayMaxRounds,
       input.systemPrompt ?? null, input.workingDir ?? null, t, t);
 
     const mk = this.db.prepare(

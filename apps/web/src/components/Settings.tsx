@@ -34,7 +34,7 @@ export function Settings({ open, topic, participants, runner, onClose, onArchive
 
   return (
     <>
-      {open && <div className="overlay" style={{ zIndex: 14, background: 'rgba(0,0,0,.4)' }} onClick={onClose} />}
+      {open && <div className="overlay sheet-overlay" style={{ zIndex: 14, background: 'rgba(0,0,0,.4)' }} onClick={onClose} />}
       <aside className={`settings ${open ? 'open' : ''}`} aria-label="방 설정">
         <section>
           <h3>방</h3>

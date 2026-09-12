@@ -16,6 +16,7 @@ interface Props {
   runner: RunnerStatus | null;
   onMenu: () => void;
   onSettings: () => void;
+  profile: string;
 }
 
 const AV: Record<string, string> = { user: '나', claude: '✳', codex: '⬢' };
@@ -25,7 +26,7 @@ function hhmm(iso: string) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-export function Thread({ topic, participants, messages, approvals, notices, active, runner, onMenu, onSettings }: Props) {
+export function Thread({ topic, participants, messages, approvals, notices, active, runner, onMenu, onSettings, profile }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
   const claude = participants.find((p) => p.kind === 'claude');
@@ -57,14 +58,17 @@ export function Thread({ topic, participants, messages, approvals, notices, acti
     <>
       <div className="topbar">
         <button className="iconbtn menubtn" onClick={onMenu} aria-label="토픽 목록">☰</button>
-        <span>{topic.emoji}</span>
-        <span className="title">{topic.title}</span>
-        <span className="tag">{topic.turnPolicy}{topic.turnPolicy === 'relay' ? ` ×${topic.relayMaxRounds}` : ''}</span>
-        {claude && <span className="tag claude hide-sm" title={`effort ${claude.effort ?? '기본'}`}>✳ {claude.model}{!claude.enabled ? ' · muted' : ''}</span>}
-        {codex && <span className="tag codex hide-sm" title={`effort ${codex.effort ?? '기본'}`}>⬢ {codex.model}{!codex.enabled ? ' · muted' : ''}</span>}
+        <div className="head">
+          <div className="crumb">{profile}<span className="sep">/</span>{topic.emoji && topic.emoji !== '💬' ? `${topic.emoji} ` : ''}<span className="title">{topic.title}</span></div>
+          <div className="meta">
+            <span>{topic.turnPolicy}{topic.turnPolicy === 'relay' ? ` ×${topic.relayMaxRounds}` : ''}</span>
+            {claude && <span className={`c ${!claude.enabled ? 'off' : ''}`} title={`effort ${claude.effort ?? '기본'}`}>✳ {claude.model}{!claude.enabled ? ' muted' : ''}</span>}
+            {codex && <span className={`x ${!codex.enabled ? 'off' : ''}`} title={`effort ${codex.effort ?? '기본'}`}>⬢ {codex.model}{!codex.enabled ? ' muted' : ''}</span>}
+          </div>
+        </div>
         <span className="spacer" />
         {active.length > 0 && <button className="iconbtn danger" onClick={() => void api.interrupt(topic.id)}>■ 중단</button>}
-        <button className="iconbtn" onClick={onSettings} aria-label="설정">⚙</button>
+        <button className="iconbtn settingsbtn" onClick={onSettings} aria-label="설정">⚙</button>
       </div>
 
       <div className="thread" ref={scrollRef}>

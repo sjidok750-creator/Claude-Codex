@@ -23,7 +23,15 @@ export function App() {
   const [profile, setProfile] = useState<ProfileId>(() => (readLs(LS_PROFILE) === 'personal' ? 'personal' : 'work'));
   const [topicId, setTopicId] = useState<string | null>(() => readLs(LS_TOPIC));
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(() => window.innerWidth >= 1000);
+  const [wide, setWide] = useState(() => window.matchMedia('(min-width: 861px)').matches);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 861px)');
+    const on = () => setWide(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  const showSettings = !!topicId && (wide || settingsOpen);
   const [showNew, setShowNew] = useState(false);
 
   const topics = useMemo(
@@ -66,7 +74,7 @@ export function App() {
   };
 
   return (
-    <div className={`app ${settingsOpen && topic ? 'with-settings' : ''}`}>
+    <div className={`app ${showSettings && topic ? 'with-settings' : ''}`}>
       <Sidebar
         open={sidebarOpen}
         connected={state.connected}
@@ -92,6 +100,7 @@ export function App() {
             runner={state.runner}
             onMenu={() => setSidebarOpen(true)}
             onSettings={() => setSettingsOpen((v) => !v)}
+            profile={profile}
           />
         ) : (
           <>
@@ -111,9 +120,9 @@ export function App() {
           </>
         )}
       </div>
-      {topic && settingsOpen && (
+      {topic && showSettings && (
         <Settings
-          open={settingsOpen}
+          open={settingsOpen || wide}
           topic={topic}
           participants={participants}
           runner={state.runner}

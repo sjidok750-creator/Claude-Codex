@@ -26,8 +26,8 @@ function env(name: string, fallback: string): string {
   return v === undefined || v === '' ? fallback : v;
 }
 
-const dataDir = path.resolve(env('DATA_DIR', path.join(REPO_ROOT, 'data')));
-const workspace = path.resolve(env('WORKSPACE_DIR', path.join(dataDir, 'workspace')));
+const dataDir = path.resolve(REPO_ROOT, env('DATA_DIR', 'data'));
+const workspace = path.resolve(REPO_ROOT, env('WORKSPACE_DIR', path.join(dataDir, 'workspace')));
 fs.mkdirSync(workspace, { recursive: true });
 
 export const config = {

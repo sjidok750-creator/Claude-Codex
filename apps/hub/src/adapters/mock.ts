@@ -19,6 +19,7 @@ export class MockAdapter implements AgentAdapter {
         ? CLAUDE_MODEL_ALIASES
         : [
           { id: 'gpt-6-astra', label: 'GPT-6-Astra (mock)', efforts: ['low', 'medium', 'high', 'xhigh'], defaultEffort: 'low', isDefault: true },
+          { id: 'gpt-5.6-sol', label: 'GPT-5.6-Sol (mock)', efforts: ['low', 'medium', 'high', 'xhigh'], defaultEffort: 'low' },
           { id: 'gpt-5.6-terra', label: 'GPT-5.6-Terra (mock)', efforts: ['low', 'medium', 'high'], defaultEffort: 'medium' },
         ],
       detail: '가짜 에이전트 (MOCK_AGENTS=1)',

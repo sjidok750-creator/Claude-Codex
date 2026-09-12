@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ProfileId, TurnPolicy } from '@claude-codex/protocol';
 
-const EMOJIS = ['💬', '🧭', '📝', '🐛', '📈', '🗣', '🧪', '🎯', '📚', '🛠', '🍳', '✈️'];
+const EMOJIS = ['', '🧭', '📝', '🐛', '📈', '🗣', '🧪', '🎯', '📚', '🛠', '🍳', '✈️'];
 
 const POLICIES: Array<{ id: TurnPolicy; label: string; desc: string }> = [
   { id: 'mention', label: 'mention', desc: '지목 없으면 둘 다, @claude/@codex 로 지목하면 그쪽만' },
@@ -18,7 +18,7 @@ interface Props {
 
 export function NewTopicDialog({ profile, onClose, onCreate }: Props) {
   const [title, setTitle] = useState('');
-  const [emoji, setEmoji] = useState('💬');
+  const [emoji, setEmoji] = useState('');
   const [policy, setPolicy] = useState<TurnPolicy>('mention');
   const [prompt, setPrompt] = useState('');
   const [dir, setDir] = useState('');
@@ -41,9 +41,9 @@ export function NewTopicDialog({ profile, onClose, onCreate }: Props) {
           <input id="nt-title" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="예: 이번 주 식단, 결제모듈 리팩터링" onKeyDown={(e) => { if (e.key === 'Enter') void submit(); }} />
         </div>
         <div className="field">
-          <label>이모지</label>
+          <label>아이콘 (선택)</label>
           <div className="emoji-row">
-            {EMOJIS.map((e) => <button key={e} type="button" className={e === emoji ? 'on' : ''} onClick={() => setEmoji(e)}>{e}</button>)}
+            {EMOJIS.map((e) => <button key={e || 'none'} type="button" className={e === emoji ? 'on' : ''} onClick={() => setEmoji(e)} title={e ? e : '없음'}>{e || '#'}</button>)}
           </div>
         </div>
         <div className="field">

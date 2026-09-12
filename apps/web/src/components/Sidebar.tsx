@@ -31,7 +31,7 @@ export function Sidebar({ open, connected, profile, onProfile, topics, activeTop
           {topics.length === 0 && <div className="empty-topics">방이 없습니다. 아래에서 만드세요.</div>}
           {topics.map((t) => (
             <button key={t.id} className={`topic-item ${t.id === activeTopicId ? 'on' : ''}`} onClick={() => onSelect(t.id)}>
-              <span className="emoji">{t.emoji}</span>
+              <span className="emoji">{t.emoji && t.emoji !== '💬' ? t.emoji : '#'}</span>
               <span className="title">{t.title}</span>
               {(active[t.id]?.length ?? 0) > 0 ? <span className="live" title="응답 중" /> : <span className="policy">{t.turnPolicy}</span>}
             </button>

@@ -144,7 +144,7 @@ export const DEFAULTS = {
   claudeModel: 'sonnet',
   claudeEffort: 'medium',
   claudePermissionMode: 'acceptEdits',
-  codexModel: 'gpt-6-astra',
+  codexModel: 'gpt-5.6-sol',
   codexEffort: 'medium',
   codexSandbox: 'workspace-write',
   relayMaxRounds: 2,

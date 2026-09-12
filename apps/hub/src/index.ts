@@ -8,6 +8,7 @@ import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { AgentKind, CreateTopicInput, HubState, RunnerStatus, ServerEvent, UpdateParticipantInput, UpdateTopicInput } from '@claude-codex/protocol';
+import { DEFAULTS } from '@claude-codex/protocol';
 import { config } from './config.js';
 import { HubDb } from './db.js';
 import { Bus } from './bus.js';
@@ -79,7 +80,8 @@ app.post('/api/topics', async (c) => {
   if (body.profile !== 'work' && body.profile !== 'personal') return c.json({ error: 'profile 은 work 또는 personal' }, 400);
   const defaults = {
     claudeModel: body.claudeModel ?? null,
-    codexModel: body.codexModel ?? runner.codex.models.find((m) => m.isDefault)?.id ?? null,
+    codexModel: body.codexModel
+      ?? (runner.codex.models.some((m) => m.id === DEFAULTS.codexModel) || runner.codex.models.length === 0 ? DEFAULTS.codexModel : runner.codex.models.find((m) => m.isDefault)?.id ?? DEFAULTS.codexModel),
   };
   const { topic, participants } = db.createTopic({ ...body, title: body.title.trim(), ...defaults });
   bus.emit({ type: 'topic.upsert', topic });
