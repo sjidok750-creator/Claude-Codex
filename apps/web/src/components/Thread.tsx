@@ -60,8 +60,8 @@ export function Thread({ topic, participants, messages, approvals, notices, acti
         <span>{topic.emoji}</span>
         <span className="title">{topic.title}</span>
         <span className="tag">{topic.turnPolicy}{topic.turnPolicy === 'relay' ? ` ×${topic.relayMaxRounds}` : ''}</span>
-        {claude && <span className={`tag claude hide-sm ${!claude.enabled ? 'muted' : ''}`}>✳ {claude.model}{claude.effort ? `/${claude.effort}` : ''}{!claude.enabled ? ' (muted)' : ''}</span>}
-        {codex && <span className={`tag codex hide-sm ${!codex.enabled ? 'muted' : ''}`}>⬢ {codex.model}{codex.effort ? `/${codex.effort}` : ''}{!codex.enabled ? ' (muted)' : ''}</span>}
+        {claude && <span className="tag claude hide-sm" title={`effort ${claude.effort ?? '기본'}`}>✳ {claude.model}{!claude.enabled ? ' · muted' : ''}</span>}
+        {codex && <span className="tag codex hide-sm" title={`effort ${codex.effort ?? '기본'}`}>⬢ {codex.model}{!codex.enabled ? ' · muted' : ''}</span>}
         <span className="spacer" />
         {active.length > 0 && <button className="iconbtn danger" onClick={() => void api.interrupt(topic.id)}>■ 중단</button>}
         <button className="iconbtn" onClick={onSettings} aria-label="설정">⚙</button>
@@ -92,9 +92,8 @@ function MessageView({ m, streaming }: { m: Message; streaming: boolean }) {
         <div className="meta">
           <b>{m.displayName}</b>
           {m.model && <span className="model">{m.model}</span>}
-          <span>{hhmm(m.createdAt)}</span>
+          <span title={m.usage && (m.usage.input || m.usage.output) ? `토큰 입력 ${m.usage.input ?? 0} · 출력 ${m.usage.output ?? 0}` : undefined}>{hhmm(m.createdAt)}</span>
           {m.round > 1 && <span className="round">r{m.round}</span>}
-          {m.usage && (m.usage.input || m.usage.output) ? <span title="입력/출력 토큰">{m.usage.input ?? 0}/{m.usage.output ?? 0} tok</span> : null}
         </div>
         <div className="body">
           {m.blocks.map((b, i) => <BlockView key={i} b={b} />)}
@@ -269,25 +268,24 @@ function Composer({ topic, participants, busy, runner }: { topic: Topic; partici
             ))}
           </div>
         )}
-        <textarea
-          id={`composer-${topic.id}`}
-          ref={ref}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={onKey}
-          placeholder={busy ? '응답 중… 보내면 다음 라운드를 멈추고 이 메시지를 우선합니다' : '메시지 · @claude @codex 로 지목 · / 로 명령'}
-          rows={1}
-        />
-        <div className="send">
-          <button type="button" className="primary" disabled={!text.trim() || sending} onClick={() => void send()}>{sending ? '…' : '보내기'}</button>
+        <div className="box">
+          <textarea
+            id={`composer-${topic.id}`}
+            ref={ref}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={onKey}
+            placeholder={busy ? '응답 중 (보내면 끼어들기)' : '메시지 · @claude @codex 지목 · / 명령'}
+            rows={1}
+          />
+          <button type="button" className="sendbtn" disabled={!text.trim() || sending} onClick={() => void send()} aria-label="보내기">{sending ? '…' : '↑'}</button>
         </div>
-        <div className="hint">
-          <span><kbd>Enter</kbd> 보내기 · <kbd>Shift+Enter</kbd> 줄바꿈</span>
-          <span><kbd>@</kbd> 지목</span>
-          <span><kbd>/</kbd> 명령 (model · effort · mode · mute · stop)</span>
-          {notReady && <span style={{ color: 'var(--warn)' }}>⚠ 러너 상태를 확인하세요 (설정 → 러너)</span>}
-          {err && <span style={{ color: 'var(--err)' }}>{err}</span>}
-        </div>
+        {(notReady || err) && (
+          <div className="hint">
+            {notReady && <span style={{ color: 'var(--warn)' }}>⚠ 러너 상태를 확인하세요 (⚙ → 러너)</span>}
+            {err && <span style={{ color: 'var(--err)' }}>{err}</span>}
+          </div>
+        )}
       </div>
     </div>
   );

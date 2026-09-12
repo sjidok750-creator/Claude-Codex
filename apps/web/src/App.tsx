@@ -23,7 +23,7 @@ export function App() {
   const [profile, setProfile] = useState<ProfileId>(() => (readLs(LS_PROFILE) === 'personal' ? 'personal' : 'work'));
   const [topicId, setTopicId] = useState<string | null>(() => readLs(LS_TOPIC));
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(() => window.innerWidth > 1100);
+  const [settingsOpen, setSettingsOpen] = useState(() => window.innerWidth >= 1000);
   const [showNew, setShowNew] = useState(false);
 
   const topics = useMemo(
@@ -111,7 +111,7 @@ export function App() {
           </>
         )}
       </div>
-      {topic && (
+      {topic && settingsOpen && (
         <Settings
           open={settingsOpen}
           topic={topic}

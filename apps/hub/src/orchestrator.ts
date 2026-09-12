@@ -129,7 +129,7 @@ export class Orchestrator {
   private buildInput(topic: Topic, participant: Participant, unseen: Message[], round: number): string {
     const you = AGENT_LABEL[participant.kind as AgentKind];
     const lines = unseen.map((m) => {
-      const from = m.kind === 'user' ? '사용자' : AGENT_LABEL[m.kind as AgentKind];
+      const from = m.kind === 'user' ? esc(m.displayName || '사용자') : AGENT_LABEL[m.kind as AgentKind];
       const model = m.model ? ` model="${esc(m.model)}"` : '';
       const body = m.status === 'passed' ? '(PASS)' : m.content;
       return `  <msg from="${from}"${model} at="${hhmm(m.createdAt)}">${esc(body)}</msg>`;
@@ -145,6 +145,10 @@ export class Orchestrator {
 
   private systemPromptFor(topic: Topic, participant: Participant): string {
     const parts = [this.trioPrompt.replace(/you="Claude"/g, `you="${AGENT_LABEL[participant.kind as AgentKind]}"`)];
+    const user = this.db.listParticipants(topic.id).find((p) => p.kind === 'user');
+    if (user && user.displayName && user.displayName !== '나') {
+      parts.push(`# 사용자 호칭\n사용자의 이름은 "${user.displayName}" 이다. "사용자님" 대신 이 이름으로 자연스럽게 부른다.`);
+    }
     if (topic.systemPrompt?.trim()) parts.push(`# 이 방(${topic.title})의 추가 규칙\n${topic.systemPrompt.trim()}`);
     return parts.join('\n\n');
   }

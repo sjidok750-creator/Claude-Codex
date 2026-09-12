@@ -141,8 +141,8 @@ export type UpdateTopicInput = Partial<Pick<Topic, 'title' | 'emoji' | 'turnPoli
 export type UpdateParticipantInput = Partial<Pick<Participant, 'displayName' | 'model' | 'effort' | 'permissionMode' | 'enabled' | 'order'>>;
 
 export const DEFAULTS = {
-  claudeModel: 'opus',
-  claudeEffort: 'high',
+  claudeModel: 'sonnet',
+  claudeEffort: 'medium',
   claudePermissionMode: 'acceptEdits',
   codexModel: 'gpt-6-astra',
   codexEffort: 'medium',
@@ -151,9 +151,9 @@ export const DEFAULTS = {
 } as const;
 
 export const CLAUDE_MODEL_ALIASES: ModelInfo[] = [
-  { id: 'opus', label: 'Opus 5 (alias: opus)', efforts: ['low', 'medium', 'high', 'xhigh', 'max'], defaultEffort: 'high', isDefault: true },
-  { id: 'sonnet', label: 'Sonnet 5 (alias: sonnet)', efforts: ['low', 'medium', 'high', 'xhigh', 'max'], defaultEffort: 'high' },
-  { id: 'fable', label: 'Fable 5.1 (alias: fable)', efforts: ['low', 'medium', 'high', 'xhigh', 'max'], defaultEffort: 'high' },
+  { id: 'opus', label: 'Opus (alias: opus)', efforts: ['low', 'medium', 'high', 'xhigh', 'max'], defaultEffort: 'high' },
+  { id: 'sonnet', label: 'Sonnet (alias: sonnet)', efforts: ['low', 'medium', 'high', 'xhigh', 'max'], defaultEffort: 'medium', isDefault: true },
+  { id: 'fable', label: 'Fable (alias: fable)', efforts: ['low', 'medium', 'high', 'xhigh', 'max'], defaultEffort: 'high' },
   { id: 'haiku', label: 'Haiku (alias: haiku)', efforts: ['low', 'medium', 'high'], defaultEffort: 'medium' },
   { id: 'opusplan', label: 'Opus 계획 + Sonnet 실행 (opusplan)', efforts: ['low', 'medium', 'high', 'xhigh', 'max'], defaultEffort: 'high' },
 ];

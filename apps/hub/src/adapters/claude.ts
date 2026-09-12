@@ -260,7 +260,10 @@ export class ClaudeAdapter implements AgentAdapter {
       const u = msg.usage ?? {};
       turn.emit({ type: 'usage', input: u.input_tokens, output: u.output_tokens, costUsd: msg.total_cost_usd });
       if (msg.is_error) {
-        const text = typeof msg.result === 'string' && msg.result ? msg.result : (msg.subtype || 'unknown error');
+        let text = typeof msg.result === 'string' && msg.result ? msg.result : (msg.subtype || 'unknown error');
+        if (/authenticat|401|OAuth|login/i.test(text)) {
+          text += '\n\n→ 허브 PC 터미널에서 `claude setup-token` 을 실행해 나온 토큰을 .env 의 CLAUDE_CODE_OAUTH_TOKEN= 에 넣고 허브를 재시작하세요. (또는 `claude` 안에서 /logout 후 /login)';
+        }
         turn.emit({ type: 'error', message: text });
       } else {
         turn.emit({ type: 'done' });

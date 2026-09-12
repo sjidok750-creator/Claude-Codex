@@ -70,16 +70,21 @@ export function Settings({ open, topic, participants, runner, onClose, onArchive
 
         <section style={{ display: 'grid', gap: 10 }}>
           <h3>참가자</h3>
+          {participants.filter((p) => p.kind === 'user').map((p) => (
+            <div className="field" key={p.id}>
+              <label htmlFor={`me-${p.id}`}>내 이름 (에이전트가 이렇게 부릅니다)</label>
+              <input id={`me-${p.id}`} defaultValue={p.displayName} placeholder="예: 상국" onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== p.displayName) void api.updateParticipant(p.id, { displayName: v }); }} />
+            </div>
+          ))}
           {participants.filter((p) => p.kind !== 'user').map((p) => (
             <ParticipantCard key={p.id} p={p} runner={runner} />
           ))}
         </section>
 
         <section>
-          <h3>러너</h3>
-          <div className="session">{runner?.hostname ?? '-'} · {runner?.mock ? 'MOCK' : 'real'}</div>
-          <div className="session">claude: {runner?.claude.version ?? '없음'} — {runner?.claude.detail ?? ''}</div>
-          <div className="session">codex: {runner?.codex.version ?? '없음'} — {runner?.codex.detail ?? ''}</div>
+          <h3>러너 · {runner?.hostname.replace(/\.local$/, '') ?? '-'}{runner?.mock ? ' (MOCK)' : ''}</h3>
+          <div className="session" title={runner?.claude.detail ?? ''}>claude {runner?.claude.version?.replace(' (Claude Code)', '') ?? '없음'}{runner?.claude.detail ? ` · ${runner.claude.detail}` : ''}</div>
+          <div className="session" title={runner?.codex.detail ?? ''}>codex {runner?.codex.version?.replace('codex-cli ', '') ?? '없음'}{runner?.codex.detail ? ` · ${runner.codex.detail}` : ''}</div>
           <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
             <button className="iconbtn" onClick={() => void api.refreshRunner()}>상태 새로고침</button>
             <button className="iconbtn danger" onClick={() => { if (confirm('이 방을 보관함으로 옮길까요? (대화는 DB 에 남습니다)')) void api.archiveTopic(topic.id).then(onArchived); }}>방 보관</button>
@@ -114,14 +119,8 @@ function ParticipantCard({ p, runner }: { p: Participant; runner: RunnerStatus |
           {!known && p.model && <option value={p.model}>{p.model}</option>}
           {models.map((m) => <option key={m.id} value={m.id}>{m.label}{m.isDefault ? ' · 기본' : ''}</option>)}
         </select>
-        {p.kind === 'claude' && <span className="help">별칭 대신 전체 이름(예: claude-sonnet-5)도 됩니다. 아래 입력칸에 직접 적으세요.</span>}
+        {p.kind === 'claude' && <span className="help">전체 이름(예: claude-sonnet-5)은 채팅에서 <code>/model claude 이름</code> 으로.</span>}
       </div>
-      {p.kind === 'claude' && (
-        <div className="field">
-          <label htmlFor={`mf-${p.id}`}>모델 직접 입력</label>
-          <input id={`mf-${p.id}`} defaultValue={p.model ?? ''} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== p.model) void update({ model: v }); }} />
-        </div>
-      )}
       <div className="row2">
         <div className="field">
           <label htmlFor={`e-${p.id}`}>effort</label>
@@ -137,7 +136,6 @@ function ParticipantCard({ p, runner }: { p: Participant; runner: RunnerStatus |
           </select>
         </div>
       </div>
-      <div className="session" title={p.agentSessionId ?? ''}>session: {p.agentSessionId ? p.agentSessionId.slice(0, 8) + '…' : '(첫 대화에서 생성)'}</div>
     </div>
   );
 }

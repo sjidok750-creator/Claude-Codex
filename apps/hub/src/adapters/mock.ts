@@ -34,7 +34,7 @@ export class MockAdapter implements AgentAdapter {
     }
     const me = this.kind === 'claude' ? 'Claude' : 'Codex';
     const other = this.kind === 'claude' ? 'Codex' : 'Claude';
-    const lastUser = [...input.matchAll(/<msg from="사용자"[^>]*>([\s\S]*?)<\/msg>/g)].pop()?.[1]?.trim() ?? '';
+    const lastUser = [...input.matchAll(/<msg from="(?!Claude"|Codex")[^"]*"[^>]*>([\s\S]*?)<\/msg>/g)].pop()?.[1]?.trim() ?? '';
     // 마지막 사용자 메시지가 상대만 지목했으면 넘긴다
     const mentionsOther = new RegExp(`@${other.toLowerCase()}`, 'i').test(lastUser) && !new RegExp(`@${me.toLowerCase()}|@all|@모두`, 'i').test(lastUser);
     const lastOther = [...input.matchAll(new RegExp(`<msg from="${other}"[^>]*>([\\s\\S]*?)</msg>`, 'g'))].pop()?.[1]?.trim();
