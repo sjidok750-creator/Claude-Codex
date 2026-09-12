@@ -45,25 +45,58 @@ export interface ClaudeAdapterOptions {
   promptDir: string;
 }
 
+/** CLI 버전에 따라 달라지는 플래그. `claude --help` 를 한 번 읽어 결정한다. */
+interface CliFeatures {
+  version: string | null;
+  appendSystemPromptFile: boolean; // --append-system-prompt-file (없으면 --append-system-prompt <텍스트>)
+  permissionPrompts: boolean;      // --permission-prompts host (없으면 --permission-prompt-tool stdio)
+  effort: boolean;
+  name: boolean;
+}
+
 export class ClaudeAdapter implements AgentAdapter {
   readonly kind = 'claude' as const;
   private procs = new Map<string, Proc>();
+  private features: CliFeatures | null = null;
 
   constructor(private opts: ClaudeAdapterOptions) {
     fs.mkdirSync(opts.promptDir, { recursive: true });
   }
 
-  async status(): Promise<AgentStatus> {
-    const version = await new Promise<string | null>((resolve) => {
-      const spec = spawnSpec(this.opts.bin, ['--version']);
-      execFile(spec.command, spec.args, { ...spec.options, timeout: 15000 }, (err, stdout) => {
-        resolve(err ? null : String(stdout).trim());
+  private exec(args: string[]): Promise<string | null> {
+    return new Promise((resolve) => {
+      const spec = spawnSpec(this.opts.bin, args);
+      execFile(spec.command, spec.args, { ...spec.options, timeout: 20000, maxBuffer: 4 * 1024 * 1024 }, (err, stdout) => {
+        resolve(err ? null : String(stdout));
       });
     });
-    if (!version) {
+  }
+
+  private async detect(): Promise<CliFeatures | null> {
+    if (this.features) return this.features;
+    const version = await this.exec(['--version']);
+    if (!version) return null;
+    const help = (await this.exec(['--help'])) ?? '';
+    this.features = {
+      version: version.trim(),
+      appendSystemPromptFile: help.includes('--append-system-prompt-file'),
+      permissionPrompts: help.includes('--permission-prompts '),
+      effort: help.includes('--effort'),
+      name: help.includes('--name '),
+    };
+    return this.features;
+  }
+
+  async status(): Promise<AgentStatus> {
+    const f = await this.detect();
+    if (!f) {
       return { available: false, version: null, loggedIn: null, models: CLAUDE_MODEL_ALIASES, detail: `'${this.opts.bin}' 를 실행할 수 없습니다. Claude Code 설치와 PATH 를 확인하세요.` };
     }
-    return { available: true, version, loggedIn: null, models: CLAUDE_MODEL_ALIASES, detail: '로그인 여부는 첫 대화에서 확인됩니다 (claude login 또는 claude setup-token).' };
+    const legacy = !f.permissionPrompts || !f.appendSystemPromptFile;
+    return {
+      available: true, version: f.version, loggedIn: null, models: CLAUDE_MODEL_ALIASES,
+      detail: (legacy ? '구버전 CLI 플래그로 동작 중. ' : '') + '로그인 여부는 첫 대화에서 확인됩니다 (claude login 또는 claude setup-token).',
+    };
   }
 
   private signatureOf(ctx: RunContext): string {
@@ -77,7 +110,7 @@ export class ClaudeAdapter implements AgentAdapter {
     return file;
   }
 
-  private spawnProc(ctx: RunContext, sessionId: string, resume: boolean): Proc {
+  private spawnProc(ctx: RunContext, sessionId: string, resume: boolean, f: CliFeatures): Proc {
     const p = ctx.participant;
     const args = [
       '-p',
@@ -85,13 +118,16 @@ export class ClaudeAdapter implements AgentAdapter {
       '--output-format', 'stream-json',
       '--include-partial-messages',
       '--verbose',
-      '--permission-prompts', 'host',
       '--permission-mode', p.permissionMode || 'acceptEdits',
       '--model', p.model || 'opus',
-      '--append-system-prompt-file', this.promptFile(ctx),
-      '--name', `claude-codex:${ctx.topic.title}`.slice(0, 60),
     ];
-    if (p.effort) args.push('--effort', p.effort);
+    // 승인 요청을 stdin/stdout 으로 받는 방법은 버전마다 다르다
+    if (f.permissionPrompts) args.push('--permission-prompts', 'host');
+    else args.push('--permission-prompt-tool', 'stdio');
+    if (f.appendSystemPromptFile) args.push('--append-system-prompt-file', this.promptFile(ctx));
+    else args.push('--append-system-prompt', ctx.systemPrompt);
+    if (f.name) args.push('--name', `claude-codex:${ctx.topic.title}`.slice(0, 60));
+    if (p.effort && f.effort) args.push('--effort', p.effort);
     if (resume) args.push('--resume', sessionId);
     else args.push('--session-id', sessionId);
 
@@ -281,9 +317,12 @@ export class ClaudeAdapter implements AgentAdapter {
     }
     if (proc) return proc;
 
+    const f = await this.detect();
+    if (!f) throw new Error(`'${this.opts.bin}' 를 실행할 수 없습니다. Claude Code 설치와 PATH 를 확인하세요.`);
+
     const existing = ctx.participant.agentSessionId;
     if (existing) {
-      proc = this.spawnProc(ctx, existing, true);
+      proc = this.spawnProc(ctx, existing, true, f);
       this.procs.set(key, proc);
       // --resume 실패(세션 파일 없음 등)는 init 없이 곧바로 종료된다 → 새 세션으로 재시도
       const ok = await this.waitInit(proc, 20000);
@@ -291,7 +330,7 @@ export class ClaudeAdapter implements AgentAdapter {
       this.procs.delete(key);
     }
     const fresh = randomUUID();
-    proc = this.spawnProc(ctx, fresh, false);
+    proc = this.spawnProc(ctx, fresh, false, f);
     this.procs.set(key, proc);
     emit({ type: 'session', sessionId: fresh });
     return proc;

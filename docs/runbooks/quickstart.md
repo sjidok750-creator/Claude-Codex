@@ -24,6 +24,18 @@ codex login     # ChatGPT 계정으로 로그인
 무인 서버(모니터 없는 PC)에서 Claude 로그인이 어려우면, 로그인된 PC에서 `claude setup-token` 으로 장기 토큰을 만들어
 허브 PC 의 환경변수 `CLAUDE_CODE_OAUTH_TOKEN` 에 넣는다 (Claude 구독 필요, 공식 기능).
 
+### 오래된 macOS (Big Sur 11 / Monterey 12) 에서 `claude` 가 `dyld: Symbol not found` 로 죽을 때
+최신 Claude Code 는 macOS 13 이상용 네이티브 실행 파일이다. **순수 Node 로 도는 마지막 버전 2.1.112** 를 설치하면 된다
+(허브 어댑터가 구버전 플래그를 자동으로 감지해 맞춘다. 2.1.113 부터는 네이티브).
+```bash
+npm uninstall -g @anthropic-ai/claude-code
+npm i -g @anthropic-ai/claude-code@2.1.112
+claude --version      # 2.1.112 (Claude Code)
+```
+자동 업데이트가 최신으로 되돌리지 않도록 `~/.claude/settings.json` 에 `{"autoUpdates": false}` 를 두거나
+환경변수 `DISABLE_AUTOUPDATER=1` 을 설정한다. 이 버전은 `--remote-control` 은 있지만 일부 최신 기능은 없다.
+macOS 13 이상으로 올릴 수 있는 Mac 이면 올리는 편이 낫다 (2017년 이후 모델).
+
 ## 1. 허브 설치와 실행
 
 ```bash
