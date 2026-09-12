@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { Approval, Block, Message, Participant, RunnerStatus, Topic } from '@claude-codex/protocol';
+import type { Approval, AvatarMap, Block, Message, Participant, RunnerStatus, Topic } from '@claude-codex/protocol';
+import { Avatar } from './Avatar';
 import { api } from '../api';
 import type { Notice } from '../hub';
 import { StatusBar } from './StatusBar';
@@ -17,16 +18,15 @@ interface Props {
   onMenu: () => void;
   onSettings: () => void;
   profile: string;
+  avatars: AvatarMap;
 }
-
-const AV: Record<string, string> = { user: '나', claude: '✳', codex: '⬢' };
 
 function hhmm(iso: string) {
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-export function Thread({ topic, participants, messages, approvals, notices, active, runner, onMenu, onSettings, profile }: Props) {
+export function Thread({ topic, participants, messages, approvals, notices, active, runner, onMenu, onSettings, profile, avatars }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
   const claude = participants.find((p) => p.kind === 'claude');
@@ -49,10 +49,10 @@ export function Thread({ topic, participants, messages, approvals, notices, acti
   // 메시지와 공지를 시간순으로 섞어 렌더
   const items = useMemo(() => {
     const out: Array<{ key: string; at: number; node: JSX.Element }> = [];
-    for (const m of messages) out.push({ key: m.id, at: Date.parse(m.createdAt), node: <MessageView key={m.id} m={m} streaming={m.status === 'streaming'} /> });
+    for (const m of messages) out.push({ key: m.id, at: Date.parse(m.createdAt), node: <MessageView key={m.id} m={m} streaming={m.status === 'streaming'} avatars={avatars} /> });
     for (const n of notices) out.push({ key: `n${n.id}`, at: n.at, node: <div key={`n${n.id}`} className="notice">{n.text}</div> });
     return out.sort((a, b) => a.at - b.at || (a.key < b.key ? -1 : 1));
-  }, [messages, notices]);
+  }, [messages, notices, avatars]);
 
   return (
     <>
@@ -87,11 +87,11 @@ export function Thread({ topic, participants, messages, approvals, notices, acti
   );
 }
 
-function MessageView({ m, streaming }: { m: Message; streaming: boolean }) {
+function MessageView({ m, streaming, avatars }: { m: Message; streaming: boolean; avatars: AvatarMap }) {
   if (m.status === 'passed') return <div className="passed">{m.displayName} 는 넘겼습니다 (PASS)</div>;
   return (
     <div className={`msg ${m.kind} ${m.status === 'error' ? 'error' : ''}`}>
-      <span className={`avatar ${m.kind}`}>{AV[m.kind]}</span>
+      <Avatar kind={m.kind} avatars={avatars} />
       <div>
         <div className="meta">
           <b>{m.displayName}</b>

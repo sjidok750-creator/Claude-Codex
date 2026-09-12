@@ -7,7 +7,7 @@ import { getCookie, setCookie } from 'hono/cookie';
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { WebSocketServer, type WebSocket } from 'ws';
-import type { AgentKind, CreateTopicInput, HubState, RunnerStatus, ServerEvent, UpdateParticipantInput, UpdateTopicInput } from '@claude-codex/protocol';
+import type { AgentKind, AvatarMap, CreateTopicInput, HubState, ParticipantKind, RunnerStatus, ServerEvent, UpdateParticipantInput, UpdateTopicInput } from '@claude-codex/protocol';
 import { DEFAULTS } from '@claude-codex/protocol';
 import { config } from './config.js';
 import { HubDb } from './db.js';
@@ -47,8 +47,31 @@ async function refreshRunner(): Promise<RunnerStatus> {
   return runner;
 }
 
+// ---------- 아바타 (data/avatars/<kind>.<ext>) ----------
+const avatarDir = path.join(config.dataDir, 'avatars');
+fs.mkdirSync(avatarDir, { recursive: true });
+const AVATAR_KINDS: ParticipantKind[] = ['user', 'claude', 'codex'];
+const AVATAR_EXTS: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
+
+function avatarFile(kind: ParticipantKind): { file: string; type: string } | null {
+  for (const [type, ext] of Object.entries(AVATAR_EXTS)) {
+    const file = path.join(avatarDir, `${kind}.${ext}`);
+    if (fs.existsSync(file)) return { file, type };
+  }
+  return null;
+}
+
+function avatars(): AvatarMap {
+  const out = { user: null, claude: null, codex: null } as AvatarMap;
+  for (const kind of AVATAR_KINDS) {
+    const f = avatarFile(kind);
+    if (f) out[kind] = Math.floor(fs.statSync(f.file).mtimeMs);
+  }
+  return out;
+}
+
 function state(): HubState {
-  return { topics: db.listTopics(), participants: db.listParticipants(), runner };
+  return { topics: db.listTopics(), participants: db.listParticipants(), runner, avatars: avatars() };
 }
 
 // ---------- HTTP ----------
@@ -71,6 +94,36 @@ app.use('*', async (c, next) => {
 });
 
 app.get('/api/health', (c) => c.json({ ok: true, hostname: config.hostname, mock: config.mockAgents }));
+
+app.get('/avatars/:kind', (c) => {
+  const kind = c.req.param('kind') as ParticipantKind;
+  const f = AVATAR_KINDS.includes(kind) ? avatarFile(kind) : null;
+  if (!f) return c.notFound();
+  return c.body(fs.readFileSync(f.file), 200, { 'content-type': f.type, 'cache-control': 'public, max-age=31536000, immutable' });
+});
+
+app.post('/api/avatars/:kind', async (c) => {
+  const kind = c.req.param('kind') as ParticipantKind;
+  if (!AVATAR_KINDS.includes(kind)) return c.json({ error: 'kind 는 user|claude|codex' }, 400);
+  const type = (c.req.header('content-type') ?? '').split(';')[0].trim();
+  const ext = AVATAR_EXTS[type];
+  if (!ext) return c.json({ error: 'png, jpg, webp, gif 만 됩니다' }, 400);
+  const buf = Buffer.from(await c.req.arrayBuffer());
+  if (buf.length === 0 || buf.length > 5 * 1024 * 1024) return c.json({ error: '이미지는 5MB 이하' }, 400);
+  for (const e of Object.values(AVATAR_EXTS)) { const old = path.join(avatarDir, `${kind}.${e}`); if (fs.existsSync(old)) fs.unlinkSync(old); }
+  fs.writeFileSync(path.join(avatarDir, `${kind}.${ext}`), buf);
+  const map = avatars();
+  bus.emit({ type: 'avatars', avatars: map });
+  return c.json(map);
+});
+
+app.delete('/api/avatars/:kind', (c) => {
+  const kind = c.req.param('kind') as ParticipantKind;
+  for (const e of Object.values(AVATAR_EXTS)) { const old = path.join(avatarDir, `${kind}.${e}`); if (fs.existsSync(old)) fs.unlinkSync(old); }
+  const map = avatars();
+  bus.emit({ type: 'avatars', avatars: map });
+  return c.json(map);
+});
 app.get('/api/state', (c) => c.json(state()));
 app.post('/api/runner/refresh', async (c) => c.json(await refreshRunner()));
 

@@ -7,6 +7,7 @@ import { Thread } from './components/Thread';
 import { Settings } from './components/Settings';
 import { StatusBar } from './components/StatusBar';
 import { NewTopicDialog } from './components/NewTopicDialog';
+import { Avatar } from './components/Avatar';
 
 const LS_TOPIC = 'cc.topic';
 const LS_PROFILE = 'cc.profile';
@@ -101,6 +102,7 @@ export function App() {
             onMenu={() => setSidebarOpen(true)}
             onSettings={() => setSettingsOpen((v) => !v)}
             profile={profile}
+            avatars={state.avatars}
           />
         ) : (
           <>
@@ -110,7 +112,7 @@ export function App() {
             </div>
             <div className="welcome">
               <div className="box">
-                <div className="trio"><span className="avatar user">나</span><span className="avatar claude">✳</span><span className="avatar codex">⬢</span></div>
+                <div className="trio"><Avatar kind="user" avatars={state.avatars} size={40} /><Avatar kind="claude" avatars={state.avatars} size={40} /><Avatar kind="codex" avatars={state.avatars} size={40} /></div>
                 <div><b>{profile === 'work' ? 'work' : 'personal'}</b> 프로필에 아직 방이 없습니다.</div>
                 <div>방을 하나 만들고 아무 주제나 던져 보세요. 기본 정책은 <code>mention</code>: 지목이 없으면 둘 다 답하고, <code>@claude</code> / <code>@codex</code> 로 지목하면 그쪽만 답합니다.</div>
                 <div><button className="iconbtn" onClick={() => setShowNew(true)}>+ 새 방 만들기</button></div>
@@ -126,6 +128,7 @@ export function App() {
           topic={topic}
           participants={participants}
           runner={state.runner}
+          avatars={state.avatars}
           onClose={() => setSettingsOpen(false)}
           onArchived={() => { setTopicId(null); }}
         />

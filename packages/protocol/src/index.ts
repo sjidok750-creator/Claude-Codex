@@ -107,10 +107,14 @@ export interface RunnerStatus {
   workspace: string;
 }
 
+/** 참가자 종류별 아바타 이미지 버전(파일 mtime). 없으면 null → 기본 글리프 */
+export type AvatarMap = Record<ParticipantKind, number | null>;
+
 export interface HubState {
   topics: Topic[];
   participants: Participant[];
   runner: RunnerStatus;
+  avatars: AvatarMap;
 }
 
 /** 서버 → 클라이언트 실시간 이벤트 (WebSocket) */
@@ -124,7 +128,8 @@ export type ServerEvent =
   | { type: 'approval.upsert'; approval: Approval }
   | { type: 'runner.status'; runner: RunnerStatus }
   | { type: 'topic.activity'; topicId: string; active: string[] }
-  | { type: 'system.notice'; topicId: string | null; text: string };
+  | { type: 'system.notice'; topicId: string | null; text: string }
+  | { type: 'avatars'; avatars: AvatarMap };
 
 export interface CreateTopicInput {
   profile: ProfileId;

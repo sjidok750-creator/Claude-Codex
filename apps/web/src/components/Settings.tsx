@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
-import type { Participant, RunnerStatus, Topic, TurnPolicy } from '@claude-codex/protocol';
+import { useEffect, useRef, useState } from 'react';
+import type { AvatarMap, Participant, ParticipantKind, RunnerStatus, Topic, TurnPolicy } from '@claude-codex/protocol';
 import { api } from '../api';
+import { Avatar } from './Avatar';
 
 interface Props {
   open: boolean;
   topic: Topic;
   participants: Participant[];
   runner: RunnerStatus | null;
+  avatars: AvatarMap;
   onClose: () => void;
   onArchived: () => void;
 }
@@ -24,7 +26,7 @@ const CODEX_SANDBOX = [
   { id: 'danger-full-access', label: 'danger-full-access (위험)' },
 ];
 
-export function Settings({ open, topic, participants, runner, onClose, onArchived }: Props) {
+export function Settings({ open, topic, participants, runner, avatars, onClose, onArchived }: Props) {
   const [title, setTitle] = useState(topic.title);
   const [prompt, setPrompt] = useState(topic.systemPrompt ?? '');
   const [dir, setDir] = useState(topic.workingDir ?? '');
@@ -71,13 +73,19 @@ export function Settings({ open, topic, participants, runner, onClose, onArchive
         <section style={{ display: 'grid', gap: 10 }}>
           <h3>참가자</h3>
           {participants.filter((p) => p.kind === 'user').map((p) => (
-            <div className="field" key={p.id}>
-              <label htmlFor={`me-${p.id}`}>내 이름 (에이전트가 이렇게 부릅니다)</label>
-              <input id={`me-${p.id}`} defaultValue={p.displayName} placeholder="예: 상국" onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== p.displayName) void api.updateParticipant(p.id, { displayName: v }); }} />
+            <div className="pcard" key={p.id}>
+              <div className="phead">
+                <AvatarPicker kind="user" avatars={avatars} />
+                <b>{p.displayName}</b>
+              </div>
+              <div className="field">
+                <label htmlFor={`me-${p.id}`}>내 이름 (에이전트가 이렇게 부릅니다)</label>
+                <input id={`me-${p.id}`} defaultValue={p.displayName} placeholder="예: 상국" onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== p.displayName) void api.updateParticipant(p.id, { displayName: v }); }} />
+              </div>
             </div>
           ))}
           {participants.filter((p) => p.kind !== 'user').map((p) => (
-            <ParticipantCard key={p.id} p={p} runner={runner} />
+            <ParticipantCard key={p.id} p={p} runner={runner} avatars={avatars} />
           ))}
         </section>
 
@@ -95,7 +103,7 @@ export function Settings({ open, topic, participants, runner, onClose, onArchive
   );
 }
 
-function ParticipantCard({ p, runner }: { p: Participant; runner: RunnerStatus | null }) {
+function ParticipantCard({ p, runner, avatars }: { p: Participant; runner: RunnerStatus | null; avatars: AvatarMap }) {
   const st = p.kind === 'claude' ? runner?.claude : runner?.codex;
   const models = st?.models ?? [];
   const known = models.find((m) => m.id === p.model);
@@ -106,7 +114,7 @@ function ParticipantCard({ p, runner }: { p: Participant; runner: RunnerStatus |
   return (
     <div className="pcard">
       <div className="phead">
-        <span className={`avatar ${p.kind}`}>{p.kind === 'claude' ? '✳' : '⬢'}</span>
+        <AvatarPicker kind={p.kind} avatars={avatars} />
         <b>{p.displayName}</b>
         <label className="switch"><input type="checkbox" checked={p.enabled} onChange={(e) => void update({ enabled: e.target.checked })} /> 참여</label>
       </div>
@@ -137,5 +145,26 @@ function ParticipantCard({ p, runner }: { p: Participant; runner: RunnerStatus |
         </div>
       </div>
     </div>
+  );
+}
+
+/** 아바타를 클릭하면 이미지 파일을 골라 업로드. 우클릭(또는 길게)으로 제거 */
+function AvatarPicker({ kind, avatars }: { kind: ParticipantKind; avatars: AvatarMap }) {
+  const input = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    setBusy(true);
+    try { await api.uploadAvatar(kind, file); } catch (e) { alert((e as Error).message); } finally { setBusy(false); }
+  };
+  return (
+    <span className="avatar-picker" title="클릭해서 아바타 이미지 바꾸기">
+      <button type="button" className="avatar-btn" disabled={busy} onClick={() => input.current?.click()}
+        onContextMenu={(e) => { e.preventDefault(); if (avatars[kind] && confirm('아바타 이미지를 지울까요?')) void api.removeAvatar(kind); }}>
+        <Avatar kind={kind} avatars={avatars} size={40} />
+        <span className="avatar-edit">{busy ? '…' : '✎'}</span>
+      </button>
+      <input ref={input} id={`avatar-${kind}`} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = ''; }} />
+    </span>
   );
 }

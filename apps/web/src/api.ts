@@ -17,7 +17,14 @@ async function req<T>(method: string, url: string, body?: unknown): Promise<T> {
   return (await res.json()) as T;
 }
 
+async function upload(url: string, file: File): Promise<void> {
+  const res = await fetch(url, { method: 'POST', headers: { 'content-type': file.type }, body: file });
+  if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error ?? `${res.status}`);
+}
+
 export const api = {
+  uploadAvatar: (kind: 'user' | 'claude' | 'codex', file: File) => upload(`/api/avatars/${kind}`, file),
+  removeAvatar: (kind: 'user' | 'claude' | 'codex') => req<unknown>('DELETE', `/api/avatars/${kind}`),
   state: () => req<HubState>('GET', '/api/state'),
   refreshRunner: () => req<RunnerStatus>('POST', '/api/runner/refresh'),
   createTopic: (input: CreateTopicInput) => req<{ topic: Topic; participants: Participant[] }>('POST', '/api/topics', input),

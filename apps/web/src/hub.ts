@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react';
-import type { Approval, HubState, Message, Participant, RunnerStatus, ServerEvent, Topic } from '@claude-codex/protocol';
+import type { Approval, AvatarMap, HubState, Message, Participant, RunnerStatus, ServerEvent, Topic } from '@claude-codex/protocol';
 import { api } from './api';
 
 export interface Notice { id: number; topicId: string | null; text: string; at: number }
@@ -15,6 +15,7 @@ export interface State {
   active: Record<string, string[]>; // topicId → 응답 중인 participantId
   runner: RunnerStatus | null;
   notices: Notice[];
+  avatars: AvatarMap;
 }
 
 type Action =
@@ -24,7 +25,7 @@ type Action =
 
 const initial: State = {
   connected: false, loaded: false, topics: {}, participants: {}, messages: {}, loadedTopics: {},
-  approvals: {}, active: {}, runner: null, notices: [],
+  approvals: {}, active: {}, runner: null, notices: [], avatars: { user: null, claude: null, codex: null },
 };
 
 let noticeSeq = 1;
@@ -58,7 +59,7 @@ function reducer(s: State, a: Action): State {
         case 'hello': {
           const st: HubState = e.state;
           return {
-            ...s, loaded: true, runner: st.runner,
+            ...s, loaded: true, runner: st.runner, avatars: st.avatars ?? s.avatars,
             topics: Object.fromEntries(st.topics.map((t) => [t.id, t])),
             participants: Object.fromEntries(st.participants.map((p) => [p.id, p])),
             loadedTopics: {}, // 재접속 시 메시지를 다시 불러온다
@@ -89,6 +90,8 @@ function reducer(s: State, a: Action): State {
           return { ...s, runner: e.runner };
         case 'topic.activity':
           return { ...s, active: { ...s.active, [e.topicId]: e.active } };
+        case 'avatars':
+          return { ...s, avatars: e.avatars };
         case 'system.notice':
           return { ...s, notices: [...s.notices.slice(-20), { id: noticeSeq++, topicId: e.topicId, text: e.text, at: Date.now() }] };
         default:
