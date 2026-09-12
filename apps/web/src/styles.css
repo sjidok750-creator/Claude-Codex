@@ -73,7 +73,7 @@ code, pre, kbd { font-family: var(--mono); }
 .topbar .meta .x { color: var(--codex); opacity: .85; }
 .topbar .meta .off { text-decoration: line-through; opacity: .5; }
 .settingsbtn { display: none; }
-.sheet-overlay { display: none; }
+.overlay.sheet-overlay { display: none; }
 .topbar .spacer { flex: 1; }
 .tag { font-family: var(--mono); font-size: 11px; padding: 2px 7px; border-radius: 4px; border: 1px solid var(--line-2); color: var(--ink-2); background: var(--panel-2); white-space: nowrap; }
 .tag.claude { color: var(--claude); border-color: rgba(217,119,87,.35); }
@@ -210,7 +210,7 @@ code, pre, kbd { font-family: var(--mono); }
   .settings.open { transform: none; }
   .menubtn { display: inline-flex; }
   .settingsbtn { display: inline-flex; }
-  .sheet-overlay { display: block; }
+  .overlay.sheet-overlay { display: grid; }
   .topbar .meta { display: none; }
   .thread { padding: 12px 12px 8px; }
   .msg { grid-template-columns: 28px 1fr; gap: 8px; }
